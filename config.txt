@@ -1,0 +1,7 @@
+#slack information below
+slack_token=xoxp-3827505061-9961028053-14984922707-30699395e5
+slack_user_id=U09U90U1P
+
+#BA user and password below
+user=17379935
+pass=Ooth7oht

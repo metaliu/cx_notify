@@ -3,14 +3,7 @@
 #example: CX0846 12 22 2015 HKG JFK 2 F
 set -e
 
-# go here to get a token: https://api.slack.com/web
-slack_token=xoxp-9371305061-9961028053-14884067844-6719d616c1
-#go here to find your slack user id https://api.slack.com/methods/users.list/test
-slack_user_id=U09U90U1K
-
-#BA user and password
-user=97679935
-pass=Ooth7ohn
+. config.txt
 
 function getColIndexForClass()
 {
@@ -38,7 +31,7 @@ wait=true
 
 while [ 1 ]
 do
-    echo -n "$(date) Searching on ${flight} ${origin}->${dest} ${month}/${day}/${year} for $seat_count first class seats... "
+    echo -n "$(date) Searching on ${flight} ${origin}->${dest} ${month}/${day}/${year} for $seat_count $class class seats... "
     rm -f jar.txt
     rm -f tmp.html
     #login
@@ -55,36 +48,44 @@ do
     curl -o tmp.html -s -S -L -c jar.txt -b jar.txt "https://www.britishairways.com/travel/redeem/execclub/_gf/en_us?eId=100028" -H "Origin: https://www.britishairways.com" -H "Accept-Encoding: gzip, deflate" -H "Accept-Language: en-US,en;q=0.8" -H "User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.99 Safari/537.36" -H "Content-Type: application/x-www-form-urlencoded" -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8" -H "Cache-Control: max-age=0" -H "Referer: https://www.britishairways.com/travel/redeem/execclub/_gf/en_us" -H "Connection: keep-alive" --data "stopoverOptions=No&display=Continue&departurePoint=${origin}&destinationPoint=${dest}&tab_selected=redeem&upgradeType=null&departInputDate=${month}"%"2F${day}"%"2F${year}&departureStopoverPoint=&stopOverDepartInputDate=" --compressed
     curl -o tmp.html -s -S -L -c jar.txt -b jar.txt "https://www.britishairways.com/travel/redeem/execclub/_gf/en_us"  -H "Origin: https://www.britishairways.com" -H "Accept-Encoding: gzip, deflate" -H "Accept-Language: en-US,en;q=0.8" -H "User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.99 Safari/537.36" -H "Content-Type: application/x-www-form-urlencoded" -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8" -H "Cache-Control: max-age=0" -H "Referer: https://www.britishairways.com/travel/redeem/execclub/_gf/en_us?eId=100028" -H "Connection: keep-alive" --data "eId=111011" --compressed
 
-    flightline=`html2text -ascii -nobs tmp.html | egrep -o " ${flight}.*$" | tr -s " " | sed -e 's/^[[:space:]]*//' | sed -e 's/[[:space:]]*$//'`
-    #     Flight Prem_Economy_Avail Business_Avail First_Avail
-    #e.g. CX0846 Only_2 Not Not
-
-    availability=$(echo $flightline | cut -d ' ' -f ${class_col_idx} )
-    #depending on class we want, gets the apropriate column, e.g. 'Not' or 'Only_2'
-
-    seats=`echo ${availability: -1}`
-    #gets the last char, e.g. 't' or '2'
-
-    re='^[0-9]+$'
-    if [[ $seats =~ $re ]] ; then
-        if [[ $seats -ge $seat_count ]]; then
-            message="${flight} ${origin}->${dest} ${month}/${day}/${year} $class class available [${flightline}]"
-            echo -n "Available! Sending notification [${message}]"
-            message=`python -c "import sys, urllib as ul; print ul.quote_plus(\"${message}\")"`
-            curl -s -S -o /dev/null "https://slack.com/api/chat.postMessage?token=${slack_token}&channel=${slack_user_id}&text=${message}&username=Billy%20CX%20Notifier&pretty=1"
-            exit
-        else
-            echo -n "only $seats found, need $seat_count"
+    IFS=$'\n' 
+    for flightline in `html2text -ascii -nobs tmp.html | egrep -o "CX[0-9]+.*$" | grep "Only"`
+    do
+        flightline=`echo $flightline | tr -s " " | sed -e 's/^[[:space:]]*//' | sed -e 's/[[:space:]]*$//'`
+        #     Flight Prem_Economy_Avail Business_Avail First_Avail
+        #e.g. CX0846 Only_2 Not Not
+        words=`echo $flightline | wc -w | sed -e 's/^[[:space:]]*//'`
+        num_words_with_flight_available=4
+        if [[ $words -ne $num_words_with_flight_available ]]; then
+            continue
         fi
-    fi
+        current_flight=`echo $flightline | awk '{ print $1 }'`
+        if [[ ( ${current_flight} = ${flight}) || $flight = '*' ]]; then
+            echo -n "$current_flight found ... "
+            availability=$(echo $flightline | cut -d ' ' -f ${class_col_idx} )
+            #depending on class we want, gets the apropriate column, e.g. 'Not' or 'Only_2'
 
-    if [[ "$seats" = "t" ]]; then
-        echo -n "Not available, "
-    elif [[ "$availability" = "" ]]; then
-        echo -n "Flight not found, "
-    else
-        echo -n "Parse error on [$flightline]"
-    fi
+            seats=`echo ${availability: -1}`
+            #gets the last char, e.g. 't' or '2'
+
+            re='^[0-9]+$'
+            if [[ $seats =~ $re ]] ; then
+                if [[ $seats -ge $seat_count ]]; then
+                    message="${current_flight} ${origin}->${dest} ${month}/${day}/${year} $class class available [${flightline}]"
+                    echo -n "Available! Sending notification [${message}]"
+                    message=`python -c "import sys, urllib as ul; print ul.quote_plus(\"${message}\")"`
+                    curl -s -S -o /dev/null "https://slack.com/api/chat.postMessage?token=${slack_token}&channel=${slack_user_id}&text=${message}&username=Billy%20CX%20Notifier&pretty=1"
+                    exit
+                else
+                    echo -n "only $seats found, need $seat_count"
+                fi
+            elif [[ "$seats" = "t" ]]; then
+                echo -n "not available, "
+            else
+                echo -n "parse error on [$flightline]"
+            fi
+        fi
+    done
 
     rnd_secs=$(( ( RANDOM % 300 )  + 1 ))
     sleep_secs=$((3600 + $rnd_secs))
