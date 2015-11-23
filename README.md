@@ -1,8 +1,12 @@
 # cx_notify
 1. install stuff. open terminal and paste these into the command line:
+
 ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
 brew install git
+
 brew install html2text
+
 git clone https://github.com/metaliu/cx_notify.git
 
 2. create a slack api key by going here, scrolling down, and clicking on issue token:
