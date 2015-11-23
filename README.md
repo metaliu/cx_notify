@@ -1,5 +1,5 @@
 # cx_notify
-1. install stuff. open terminal and paste these into the command line:
+0. install stuff. open terminal and paste these into the command line:
 
 ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
