@@ -16,7 +16,7 @@ def main():
     cfg.read('config.txt')
     parser = argparse.ArgumentParser(description='finds Cathay Pacific availability using BA.com')
     parser.add_argument('-f','--flight', help='Specific flight (ex: CX0846)',required=False)
-    parser.add_argument('-t','--time',help='Departure date (eg 12/22/2015)', required=True)
+    parser.add_argument('-t','--date',help='Departure date (eg 12/22/2015)', required=True)
     parser.add_argument('-o','--origin',help='Origin Airport (ex HKG)', required=True)
     parser.add_argument('-d','--destination',help='Destination Airport (ex JFK)', required=True)
     parser.add_argument('-s','--seats',help='Number of seats', required=False)
@@ -35,7 +35,7 @@ def main():
     args.flight = args.flight.upper()
     if args.seats == None: args.seats = 1
 
-    date = parse(args.time)
+    date = parse(args.date)
 
     while True:
         print "%s Searching for %s %s->%s on %s for %s %s class seats" % (time.ctime(), args.flight, args.origin, args.destination, date.strftime("%m/%d/%y"), args.seats, args.clas),
