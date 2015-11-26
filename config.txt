@@ -1,0 +1,14 @@
+[slack]
+token=xoxp-1371305061-9961028053-14984922707-30699395e5
+name=your_slack_name
+url=https://slack.com/api/chat.postMessage
+users_url=https://slack.com/api/users.list
+
+[pushover]
+apikey=gqvJuHeTYKSHPnYWEf6f1GTtQxKJLq
+user=hQv1yL9DF4wd1ac8Y3rm1spHsfStJg
+url=https://api.pushover.net/1/messages.json
+
+[ba]
+user=58475935
+pass=kd74Ndssj
