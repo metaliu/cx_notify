@@ -1,9 +1,10 @@
-#!/usr/bin/python
+#!/usr/bin/python -u
 import argparse
 import sys, os, time, re, subprocess, datetime
 import ConfigParser
 import urllib, urllib2 
 import random
+import json
 import pdb
 
 from dateutil.parser import parse
@@ -29,22 +30,28 @@ def main():
     else:
         print "Unknown seat class type"
         sys.exit(1)
+
     if args.flight == None: args.flight = 'ANY'
     args.flight = args.flight.upper()
     if args.seats == None: args.seats = 1
 
     date = parse(args.time)
+
     while True:
-        print "%s Searching for %s %s->%s on %s for %s %s class seats... " % (time.ctime(), args.flight, args.origin, args.destination, date.strftime("%m/%d/%y"), args.seats, args.clas),
+        print "%s Searching for %s %s->%s on %s for %s %s class seats" % (time.ctime(), args.flight, args.origin, args.destination, date.strftime("%m/%d/%y"), args.seats, args.clas),
         if os.path.isfile('jar.txt'): os.remove('jar.txt')
         if os.path.isfile('tmp.html'): os.remove('tmp.html')
+        print ".",
         subprocess.call(['./curls.sh', 'login', cfg.get('ba', 'user'), cfg.get('ba', 'pass')])
         sleep()
+        print ".",
         subprocess.call(['./curls.sh', 'search'])
         sleep()
+        print ".",
         subprocess.call(['./curls.sh', 'flightsearch', str(date.month),
             str(date.day), str(date.year), args.origin, args.destination, str(args.seats)])
         sleep()
+        print ". ",
         subprocess.call(['./curls.sh', 'nonstop', str(date.month),
             str(date.day), str(date.year), args.origin, args.destination])
         html=subprocess.check_output(["html2text", "-ascii", "-nobs", "tmp.html"])
@@ -79,8 +86,20 @@ def main():
 def notify(msg, cfg):
     print "Available! Sending notification: %s" % (msg)
     if 'slack' in cfg.sections():
+        #get the slack user id first
+        slack_user_id = None
         data = { 'token'    : cfg.get('slack','token'),
-                 'channel'  : cfg.get('slack', 'user_id'),
+                 'pretty'   : 1 }
+        url = cfg.get('slack', 'users_url') + '?' + urllib.urlencode(data)
+        response = json.loads(urllib2.urlopen(url).read())
+        for user in response['members']:
+            if user['name'] == cfg.get('slack', 'name'):
+                slack_user_id = user['id']
+        if slack_user_id == None:
+            print "Slack name %s doesn't exist, sorry." % (cfg.get('slack', 'name'))
+
+        data = { 'token'    : cfg.get('slack','token'),
+                 'channel'  : slack_user_id,
                  'text'     : msg,
                  'username' : 'Billy CX Notifier',
                  'pretty'   : 1 }
@@ -99,7 +118,6 @@ def notify(msg, cfg):
 
 def sleep():
     time.sleep(5 + random.randint(0,15))
-
 
 if __name__ == "__main__":
     main()
