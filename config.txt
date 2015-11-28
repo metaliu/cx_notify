@@ -1,0 +1,9 @@
+[slack]
+token=xoxp-4371305061-5745728053-43563456307-30699395e5
+name=your_slack_name
+url=https://slack.com/api/chat.postMessage
+users_url=https://slack.com/api/users.list
+
+[ba]
+user=57457935
+pass=Aoth4sdg
