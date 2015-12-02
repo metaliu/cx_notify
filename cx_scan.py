@@ -6,9 +6,8 @@ import urllib, urllib2
 import random
 import json
 import filecmp, difflib
-import pdb
-
 from dateutil.parser import parse
+import pdb
 
 __author__ = 'Billy'
 
@@ -79,15 +78,12 @@ def main():
         else:
             print "No changes in availability"
 
-        sleep_time = 3600 + random.randint(1, 300)
-        print "Waiting %i secs to check again" % (sleep_time)
+        sleep_time = 7200 + random.randint(1, 300)
+        print "Waiting until %s to check again" % (str(datetime.datetime.now() + datetime.timedelta(seconds=sleep_time)))
         time.sleep(sleep_time)
 
 #returns the j and f seats available
 def parseHTML(html):
-    F_class_col_idx = -1
-    J_class_col_idx = -2
-
     j_seats = []
     f_seats = []
     for line in html.splitlines():
@@ -98,13 +94,16 @@ def parseHTML(html):
         current_flight = flightline[0]
         if not re.match("CX[0-9]+", current_flight): continue
         print current_flight + " found, "  + str(flightline)
-        j = parseSeats(flightline[J_class_col_idx][-1])
+        j = parseSeats(flightline, 'J')
         if j > 0: j_seats.append(j)
-        f = parseSeats(flightline[F_class_col_idx][-1])
+        f = parseSeats(flightline, 'F')
         if f > 0: f_seats.append(f)
     return j_seats, f_seats
 
-def parseSeats(seats):
+def parseSeats(flightline, seat_class):
+    if seat_class == 'J': idx = -2
+    if seat_class == 'F': idx = -1
+    seats = flightline[idx][-1]
     if seats == 't':
         return 0
     if not seats.isdigit():
@@ -146,7 +145,7 @@ def notify(msg, cfg):
         print response
 
 def sleep():
-    time.sleep(10 + random.randint(0,15))
+    time.sleep(20 + random.randint(0,15))
 
 def daterange(start_date, end_date):
     for n in range(int ((end_date - start_date).days + 1)):

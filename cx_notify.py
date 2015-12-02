@@ -107,7 +107,7 @@ def notify(msg, cfg):
         response = urllib2.urlopen(url).read()
         print response
     
-    elif 'pushover' in cfg.sections():
+    if 'pushover' in cfg.sections():
         data = { 'token'  : cfg.get('pushover','apikey'),
                  'user'   : cfg.get('pushover', 'user'),
                  'message': msg }
